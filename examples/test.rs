@@ -1,7 +1,7 @@
 extern crate wee_alloc;
 use std::convert::TryFrom;
 
-use roblox_rs::{println, *};
+use roblox_rs::{print, *};
 
 // Use `wee_alloc` as the global allocator.
 #[global_allocator]
@@ -12,7 +12,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub fn main() {
     let x = "wow!!!";
     let fnn1 = move || {
-        println!("Wow, hello {}!", x);
+        print!("Wow, hello {}!", x);
     };
 
     task::delay(3., fnn1);
@@ -22,13 +22,13 @@ pub fn main() {
     CollectionService::instance().add_tag(&Workspace::instance(), "god3");
 
     for tag in CollectionService::instance().get_tags(&Workspace::instance()) {
-        println!("workspace has tag: {tag}");
+        print!("workspace has tag: {tag}");
     }
 
     let value = "Workspace".to_string();
 
     let connection = Workspace::instance().on_instance_changed(|name| {
-        println!("On instance changed!!!, {}", name);
+        print!("On instance changed!!!, {}", name);
     });
 
     task::delay(4.0, move || {
@@ -36,11 +36,11 @@ pub fn main() {
     });
 
     if Workspace::instance().name() != "Workspace" {
-        println!("BYPASSED, YOU CAN'T SET WORKSPACE NAME I DO!");
+        print!("BYPASSED, YOU CAN'T SET WORKSPACE NAME I DO!");
         Workspace::instance().set_name("Workspace");
     }
 
-    println!(
+    print!(
         "wow: {}",
         DataModel::instance()
             .find_first_child(&value, false)
@@ -48,7 +48,7 @@ pub fn main() {
             .name()
     );
 
-    println!(
+    print!(
         "wow: {:?}",
         DataModel::instance()
             .find_first_child("notWorkspace", false)
@@ -67,29 +67,29 @@ pub fn main() {
     my_func.set_parent(&Some(&Workspace::instance()));
 
     my_func.on_server_invoke(move |player, values| {
-        println!(
+        print!(
             "Wow, {} sent me messages that I will respond to:",
             player.name()
         );
         for (i, message) in values.into_iter().enumerate() {
             if let Ok(str) = String::try_from(message) {
-                println!("got string: {str}");
+                print!("got string: {str}");
             } else {
-                println!("index {i} is not a string");
+                print!("index {i} is not a string");
             }
         }
-        println!("Responding with: 1, Rust, 2");
+        print!("Responding with: 1, Rust, 2");
         vec![1.into(), "Rust".into(), 2.into()]
     });
 
     my_remote
         .on_server_event(move |player, values| {
-            println!("Wow, {} sent me messages:", player.name());
+            print!("Wow, {} sent me messages:", player.name());
             for (i, message) in values.into_iter().enumerate() {
                 if let Ok(str) = String::try_from(message) {
-                    println!("got string: {str}");
+                    print!("got string: {str}");
                 } else {
-                    println!("index {i} is not a string");
+                    print!("index {i} is not a string");
                 }
             }
         })
@@ -104,8 +104,8 @@ pub fn main() {
 
     my_fancy_part
         .on_touched(|value| {
-            println!("I ACTUALLY GOT A BASE PART?!?!?");
-            println!(
+            print!("I ACTUALLY GOT A BASE PART?!?!?");
+            print!(
                 "base part is a: {} and is named: {}",
                 &value.class_name(),
                 &value.name()
@@ -116,7 +116,7 @@ pub fn main() {
     let value = Vector3Value::new();
     value
         .on_changed(|v: Vector3| {
-            println!(
+            print!(
                 "vector changed: {} {} {}",
                 v.x() as i32,
                 v.y() as i32,

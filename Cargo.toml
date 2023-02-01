@@ -2,7 +2,7 @@
 name = "roblox_rs"
 version = "0.1.0"
 authors = ["Firebolt <24422634+Fireboltofdeath@users.noreply.github.com>"]
-edition = "2018"
+edition = "2021"
 build = "./build/main.rs"
 
 [lib]

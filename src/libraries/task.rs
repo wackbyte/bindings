@@ -4,6 +4,8 @@ extern "C" {
     fn lib_task_defer(task: Box<dyn Fn()>);
     fn lib_task_spawn(task: Box<dyn Fn()>);
     fn lib_task_wait(amount: f64) -> f64;
+    fn lib_task_desynchronize();
+    fn lib_task_synchronize();
 }
 
 pub fn delay<F: Fn() + 'static>(amount: f64, value: F) {
@@ -22,4 +24,16 @@ pub fn spawn<F: Fn() + 'static>(value: F) {
 #[deprecated]
 pub fn wait(amount: f64) -> f64 {
     unsafe { lib_task_wait(amount) }
+}
+
+pub unsafe fn desync() {
+    unsafe {
+        lib_task_desynchronize();
+    }
+}
+
+pub unsafe fn sync() {
+    unsafe {
+        lib_task_synchronize();
+    }
 }

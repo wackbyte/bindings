@@ -69,9 +69,12 @@ fn main() {
     }
 
     fs::write("./roblox/abi.luau", luau::generate(&namespaces)).unwrap();
+
+    let gen = rust::generate(&namespaces, &dump.enums);
     fs::write(
-        Path::new(&output).join("generated.rs"),
-        rust::generate(&namespaces, &dump.enums),
+        Path::new(&output).join("generated_bindings.rs"),
+        gen.bindings,
     )
     .unwrap();
+    fs::write(Path::new(&output).join("generated_types.rs"), gen.types).unwrap();
 }

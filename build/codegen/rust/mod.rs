@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::{
     codegen::{
         rust::conversion::owned_ffi_to_rust,
@@ -7,10 +9,7 @@ use crate::{
 };
 
 use self::{
-    constants::{
-        EXCLUSIVE_INSTANCE, ROBLOX_CREATABLE, RUST_OPTION, RUST_ROBLOX_ENUM_MACRO, RUST_SLICE,
-        RUST_STRING, RUST_VEC,
-    },
+    constants::{EXCLUSIVE_INSTANCE, ROBLOX_CREATABLE, RUST_ROBLOX_ENUM_MACRO},
     conversion::{
         borrowed_rust_to_ffi, get_borrowed_ffi_type, get_borrowed_rust_type, get_owned_ffi_type,
         get_owned_rust_type,
@@ -29,8 +28,75 @@ mod constants;
 mod conversion;
 mod namespaces;
 
+// https://doc.rust-lang.org/reference/keywords.html
+lazy_static::lazy_static! {
+    static ref KEYWORDS: HashSet<&'static str> = HashSet::from([
+        // strict
+        "as",
+        "break",
+        "const",
+        "continue",
+        "crate",
+        "else",
+        "enum",
+        "extern",
+        "false",
+        "fn",
+        "for",
+        "if",
+        "impl",
+        "in",
+        "let",
+        "loop",
+        "match",
+        "mod",
+        "move",
+        "mut",
+        "pub",
+        "ref",
+        "return",
+        //"self",
+        //"Self",
+        "static",
+        "struct",
+        "super",
+        "trait",
+        "true",
+        "type",
+        "unsafe",
+        "use",
+        "where",
+        "while",
+
+        // 2018+
+        "async",
+        "await",
+        "dyn",
+
+        // reserved
+        "abstract",
+        "become",
+        "box",
+        "do",
+        "final",
+        "macro",
+        "override",
+        "priv",
+        "typeof",
+        "unsized",
+        "virtual",
+        "yield",
+
+        // 2018+
+        "try",
+
+        // weak
+        "union",
+    ]);
+}
+
 fn raw_name(str: &str) -> String {
-    if matches!(str, "type" | "move" | "loop") {
+    if KEYWORDS.contains(str) {
         format!("r#{str}")
     } else {
         str.to_string()
@@ -113,7 +179,10 @@ fn generate_member_declaration(member: &Member, name: &str, context: Declaration
         let parameters = parameters.join(", ");
         let return_types = outputs.join(", ");
 
-        if matches!(context, DeclarationContext::Function) {
+        if matches!(
+            context,
+            DeclarationContext::Extern | DeclarationContext::Function
+        ) {
             write_to!(stream, "pub ");
         }
 
@@ -208,26 +277,18 @@ fn generate_enums(output: &mut Vec<String>, enums: &[Enum]) {
 
 fn generate_constant(output: &mut Vec<String>) {
     output.extend(
-        [
-            RUST_VEC,
-            RUST_OPTION,
-            RUST_STRING,
-            RUST_SLICE,
-            ROBLOX_CREATABLE,
-            RUST_ROBLOX_ENUM_MACRO,
-            EXCLUSIVE_INSTANCE,
-        ]
-        .map(ToString::to_string),
+        [ROBLOX_CREATABLE, RUST_ROBLOX_ENUM_MACRO, EXCLUSIVE_INSTANCE].map(ToString::to_string),
     );
 }
 
-pub fn generate(namespaces: &[Namespace], enums: &[Enum]) -> String {
-    let mut output = Vec::new();
-    output.push(generate_extern(namespaces));
-    output.push("use super::*;".to_string());
-    generate_constant(&mut output);
-    generate_enums(&mut output, enums);
+pub struct Generated {
+    // `extern` block
+    pub bindings: String,
+    // types & impls
+    pub types: String,
+}
 
+pub fn generate(namespaces: &[Namespace], enums: &[Enum]) -> Generated {
     let mut instances = Vec::new();
     let mut functions = Vec::new();
     let mut datatypes = Vec::new();
@@ -240,9 +301,16 @@ pub fn generate(namespaces: &[Namespace], enums: &[Enum]) -> String {
         }
     }
 
-    generate_instances(&mut output, &instances);
-    generate_datatypes(&mut output, &datatypes);
-    generate_functions(&mut output, &functions);
+    let mut types = Vec::new();
+    generate_constant(&mut types);
+    generate_enums(&mut types, enums);
+    generate_instances(&mut types, &instances);
+    generate_datatypes(&mut types, &datatypes);
+    let types = types.join("\n");
 
-    output.join("\n")
+    let mut bindings = vec![generate_extern(namespaces)];
+    generate_functions(&mut bindings, &functions);
+    let bindings = bindings.join("\n");
+
+    Generated { bindings, types }
 }
